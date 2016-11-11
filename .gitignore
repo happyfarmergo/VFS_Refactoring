@@ -1,0 +1,6 @@
+/*
+!.gitignore
+!README.md
+!/VFS/VFS/*.xaml
+!/VFS/VFS/*.cs
+!/VFS/VFS/*.config
