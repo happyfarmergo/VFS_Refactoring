@@ -1,6 +1,3 @@
-/*
-!.gitignore
-!README.md
-!/VFS/VFS/*.xaml
-!/VFS/VFS/*.cs
-!/VFS/VFS/*.config
+/VFS/VFS/bin/
+/VFS/VFS/obj/
+/VFS/VFS/Properties
