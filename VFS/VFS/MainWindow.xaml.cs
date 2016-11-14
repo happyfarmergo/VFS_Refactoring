@@ -18,6 +18,19 @@ namespace VFS
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
+
+    public enum CmdType : int
+    {
+        New = 0,
+        Delete,
+        Cut,
+        Copy,
+        Paste,
+        Rename,
+        Undo
+    }
+
     public partial class MainWindow : Window
     {
         public MainWindow()
