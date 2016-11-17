@@ -195,6 +195,7 @@ namespace VFS
         public void InsertChild(FileEntry child)
         {
             this.children.Add(child);
+            child.parent = this;
         }
 
         public FileEntry FindChild(string name)
@@ -220,6 +221,11 @@ namespace VFS
         public void DeleteChild(FileEntry entry)
         {
             this.children.Remove(entry);
+        }
+
+        public void DeleteChild(string name)
+        {
+            this.children.Remove(this.FindChild(name));
         }
 
         public int FindSameName(string name, int flag)

@@ -53,6 +53,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DirNode.cs" />
     <Compile Include="MyFileSystem.cs" />
     <Compile Include="Utility.cs" />
     <Page Include="MainWindow.xaml">

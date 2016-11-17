@@ -2,11 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace VFS
 {
+
+    public enum UndoRedoCmdType : int
+    {
+        New = 0,
+        Delete,
+        CopyPaste,
+        CutPaste,
+        Rename
+    }
+
     public class ShortFileInfo
     {
         public string name;
@@ -18,7 +29,45 @@ namespace VFS
             this.name = name;
             this.type = type;
             this.modifiedTime = modifiedtime;
-            this.size = size;
+            this.size = size / 1024;
+        }
+    }
+
+
+    public class FileOperation
+    {
+        public UndoRedoCmdType type;
+        public FileEntry source;
+        public FileEntry target;
+        public string name;
+        public FileOperation(UndoRedoCmdType type, string name, FileEntry source, FileEntry target = null)
+        {
+            this.type = type;
+            this.source = source;
+            this.target = target;
+            this.name = name;
+        }
+
+
+    }
+
+
+    public class ClipBoard
+    {
+        public CmdType type;
+        public FileEntry Source { get; set; }        //the source folder
+        public FileEntry Target { get; set; }        //the entry to paste
+
+        public ClipBoard()
+        {
+            type = CmdType.Paste;                 //just for init
+            Source = Target = null;
+        }
+
+        public void Clear()
+        {
+            type = CmdType.Paste;                 //just for init
+            Source = Target = null;
         }
     }
 
@@ -36,6 +85,7 @@ namespace VFS
         }
 
         private MyDiskManager diskManager;
+        private ClipBoard clipBoard;
         private Folder systemRoot;
         public Folder currentDir;
 
@@ -48,6 +98,9 @@ namespace VFS
                 return fileInfo;
             }
         }
+
+        private Stack<FileOperation> undoList;
+        private Stack<FileOperation> redoList;
 
         public int SpaceUsed
         {
@@ -62,6 +115,7 @@ namespace VFS
         protected MyFileSystem()
         {
             diskManager = MyDiskManager.Instance();
+            clipBoard = new ClipBoard();
 
             FileEntry node = null;
             systemRoot = (Folder)newFileNode("root", EnumFileType.Folder);
@@ -91,6 +145,8 @@ namespace VFS
             currentDir = systemRoot;
 
             fileInfo = new List<ShortFileInfo>();
+            undoList = new Stack<FileOperation>();
+            redoList = new Stack<FileOperation>();
         }
 
 
@@ -178,7 +234,8 @@ namespace VFS
             FileEntry node = newFileNode(name, type);
             diskManager.AllocFile(node);
             currentDir.InsertChild(node);
-            //fileInfo.Add(new ShortFileInfo(name, type));
+            undoList.Push(new FileOperation(UndoRedoCmdType.New, name, currentDir));
+            fileInfo.Add(new ShortFileInfo(name, type, node.modifiedTime, node.size));
             return name;
         }
 
@@ -192,8 +249,135 @@ namespace VFS
             if (cnt != 0) return false;
 
             node.SetName(newName);
+            undoList.Push(new FileOperation(UndoRedoCmdType.Rename, oldName, node));
             return true;
         }
+
+        public void CutFile(string name)
+        {
+            clipBoard.Clear();
+            clipBoard.type = CmdType.Cut;
+            clipBoard.Source = currentDir.FindChild(name);
+        }
+
+        public void CopyFile(string name)
+        {
+            clipBoard.Clear();
+            clipBoard.type = CmdType.Copy;
+            clipBoard.Source = currentDir.FindChild(name);
+        }
+
+        public string PasteFile()
+        {
+            string newName = "";
+            switch (clipBoard.type)
+            {
+                case CmdType.Cut:
+                    FileEntry tocut = ((Folder)clipBoard.Source.parent).removeChild(clipBoard.Source.fileName);
+                    newName = clipBoard.Source.fileName = getRightName(clipBoard.Source.fileName, clipBoard.Source.parent);
+                    undoList.Push(new FileOperation(UndoRedoCmdType.CutPaste, newName, clipBoard.Source.parent, currentDir));
+                    currentDir.InsertChild(tocut);
+                    break;
+                case CmdType.Copy:
+                    //maybe error int clone()
+                    FileEntry tocopy = (FileEntry)clipBoard.Source.Clone();
+                    newName = tocopy.fileName = getRightName(tocopy.fileName, clipBoard.Source.parent);
+                    undoList.Push(new FileOperation(UndoRedoCmdType.CopyPaste, newName, clipBoard.Source.parent, currentDir));
+                    currentDir.InsertChild(tocopy);
+                    break;
+                case CmdType.Paste:
+                    break;
+
+            }
+            clipBoard.Clear();
+            return newName;
+        }
+
+        public void UndoCmd()
+        {
+            if (undoList.Count > 0)
+            {
+                FileOperation op = undoList.Peek();
+                switch (op.type)
+                {
+                    case UndoRedoCmdType.New:
+                        ((Folder)op.source).DeleteChild(op.name);
+                        undoList.Pop();
+                        redoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.Delete:
+                        ((Folder)op.target).InsertChild(op.source);
+                        undoList.Pop();
+                        redoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.Rename:
+                        string newName = op.source.fileName;
+                        op.source.SetName(op.name);
+                        undoList.Pop();
+                        op.name = newName;
+                        redoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.CutPaste:
+                        FileEntry file = ((Folder)op.target).removeChild(op.name);
+                        ((Folder)op.source).InsertChild(file);
+                        undoList.Pop();
+                        redoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.CopyPaste:
+                        FileEntry entry = ((Folder)op.target).FindChild(op.name);
+                        ((Folder)op.source).InsertChild((FileEntry)entry.Clone());
+                        undoList.Pop();
+                        redoList.Push(op);
+                        break;
+                }
+            }
+        }
+
+        public void RedoCmd()
+        {
+            if (redoList.Count > 0)
+            {
+                FileOperation op = redoList.Peek();
+                switch (op.type)
+                {
+                    case UndoRedoCmdType.New:
+
+                        break;
+                    case UndoRedoCmdType.Delete:
+                        ((Folder)op.target).removeChild(op.source.fileName);
+                        redoList.Pop();
+                        undoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.Rename:
+                        string oldName = op.source.fileName;
+                        op.source.SetName(op.name);
+                        redoList.Pop();
+                        op.name = oldName;
+                        undoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.CutPaste:
+                        FileEntry file = ((Folder)op.source).removeChild(op.name);
+                        ((Folder)op.target).InsertChild(file);
+                        redoList.Pop();
+                        undoList.Push(op);
+                        break;
+                    case UndoRedoCmdType.CopyPaste:
+                        FileEntry entry = (FileEntry)((Folder)op.source).FindChild(op.name).Clone();
+                        ((Folder)op.target).InsertChild(entry);
+                        redoList.Pop();
+                        undoList.Push(op);
+                        break;
+                }
+            }
+        }
+
+        //father maybe deleted
+        public void DeleteFile(string name)
+        {
+            FileEntry entry = currentDir.removeChild(name);
+            undoList.Push(new FileOperation(UndoRedoCmdType.Delete, name, entry, currentDir));
+        }
+
 
         public void EnterNextDir(string name)
         {
