@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace VFS
 {
@@ -18,12 +19,13 @@ namespace VFS
         Rename
     }
 
+    [Serializable]
     public class ShortFileInfo
     {
-        public string name;
-        public EnumFileType type;
-        public string modifiedTime;
-        public int size;            //kb
+        public string name { get; set; }
+        public EnumFileType type { get; set; }
+        public string modifiedTime { get; set; }
+        public int size { get; set; }            //kb
         public ShortFileInfo(string name, EnumFileType type, string modifiedtime, int size)
         {
             this.name = name;
@@ -34,6 +36,7 @@ namespace VFS
     }
 
 
+    [Serializable]
     public class FileOperation
     {
         public UndoRedoCmdType type;
@@ -52,6 +55,7 @@ namespace VFS
     }
 
 
+    [Serializable]
     public class ClipBoard
     {
         public CmdType type;
@@ -69,8 +73,14 @@ namespace VFS
             type = CmdType.Paste;                 //just for init
             Source = Target = null;
         }
+
+        public bool Empty()
+        {
+            return type == CmdType.Paste;
+        }
     }
 
+    [Serializable]
     class MyFileSystem
     {
         private static MyFileSystem instance;
@@ -89,13 +99,47 @@ namespace VFS
         private Folder systemRoot;
         public Folder currentDir;
 
-        public List<ShortFileInfo> fileInfo;
+        public bool CanPaste
+        {
+            get
+            {
+                return clipBoard.Empty();
+            }
+        }
+
+        public bool CanUndo
+        {
+            get
+            {
+                return undoList.Count > 0;
+            }
+        }
+
+        public bool CanRedo
+        {
+            get
+            {
+                return redoList.Count > 0;
+            }
+        }
+
+        private List<ShortFileInfo> fileInfo;
         public List<ShortFileInfo> FileInfo
         {
             get
             {
                 fillInfo();
                 return fileInfo;
+            }
+        }
+
+        private List<DirNode> dirTree;
+        public List<DirNode> DirTree
+        {
+            get
+            {
+                getDirTree();
+                return dirTree;
             }
         }
 
@@ -109,7 +153,7 @@ namespace VFS
                 return diskManager.Used;
             }
         }
-        public const int DiskSize = MyDiskManager.BLOCK_NUM;
+        public int DiskSize = MyDiskManager.BLOCK_NUM;
 
 
         protected MyFileSystem()
@@ -267,6 +311,14 @@ namespace VFS
             clipBoard.Source = currentDir.FindChild(name);
         }
 
+        //father maybe deleted
+        public void DeleteFile(string name)
+        {
+            FileEntry entry = currentDir.removeChild(name);
+            undoList.Push(new FileOperation(UndoRedoCmdType.Delete, name, entry, currentDir));
+        }
+
+
         public string PasteFile()
         {
             string newName = "";
@@ -371,13 +423,7 @@ namespace VFS
             }
         }
 
-        //father maybe deleted
-        public void DeleteFile(string name)
-        {
-            FileEntry entry = currentDir.removeChild(name);
-            undoList.Push(new FileOperation(UndoRedoCmdType.Delete, name, entry, currentDir));
-        }
-
+        
 
         public void EnterNextDir(string name)
         {
@@ -417,6 +463,28 @@ namespace VFS
 
             currentDir = (Folder)node;
             return true;
+        }
+
+        private void getDirTree()
+        {
+            List<DirNode> root = new List<DirNode>();
+            root.Add(new DirNode(systemRoot.fileName));
+            bindDir(root[0], systemRoot.children);
+            dirTree = root;
+        }
+
+        private void bindDir(DirNode node, List<FileEntry> dir)
+        {
+            foreach (FileEntry entry in dir)
+            {
+                DirNode tmp = null;
+                if (entry.fileType == EnumFileType.Folder)
+                {
+                    tmp = new DirNode(entry.fileName, node);
+                    node.Nodes.Add(tmp);
+                    bindDir(tmp, ((Folder)entry).children);
+                }
+            }
         }
     }
 }

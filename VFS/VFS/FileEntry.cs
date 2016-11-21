@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace VFS
 {
@@ -12,14 +13,15 @@ namespace VFS
         TxtFile = 1
     }
 
-    public interface Iterator
-    {
-        public Boolean hasNext();
-        public Object next();
-    }
+    //public interface Iterator
+    //{
+    //    bool hasNext();
+    //    object next();
+    //}
 
 
-    public class FileEntry : ICloneable
+    [Serializable]
+    public class FileEntry : Object, ICloneable
     {
         public EnumFileType fileType;
         public string fileName;
@@ -46,7 +48,7 @@ namespace VFS
             this.parent = entry;
         }
 
-        public Object Clone()
+        public virtual object Clone()
         {
             return this.MemberwiseClone();
         }
@@ -75,14 +77,16 @@ namespace VFS
             FileEntry node = this;
             while (node != null)
             {
-                dirArray.Insert(0, node.fileName);
+                dirArray.Add(node.fileName);
                 node = node.parent;
             }
+            dirArray.Reverse();
             return dirArray;
         }
 
     }
 
+    [Serializable]
     public class File : FileEntry
     {
         public string content;
@@ -100,7 +104,7 @@ namespace VFS
             this.fileType = EnumFileType.TxtFile;
         }
 
-        public Object Clone()
+        public override object Clone()
         {
             return new File(
                 new FileEntry(
@@ -116,16 +120,17 @@ namespace VFS
 
     }
 
+    [Serializable]
     public class Folder : FileEntry
     {
         public List<FileEntry> children;
 
-        public class FolderIterator : Iterator
+        public class FolderIterator
         {
             private int cur, max;
             private Folder folder;
 
-            public Boolean hasNext()
+            public bool hasNext()
             {
                 return cur <= max;
             }
@@ -157,6 +162,7 @@ namespace VFS
             this.lastBlock = entry.lastBlock;
             this.parent = entry.parent;
             this.fileType = EnumFileType.Folder;
+            this.children = new List<FileEntry>();
         }
 
         private Folder(FileEntry entry, List<FileEntry> children)
@@ -178,7 +184,7 @@ namespace VFS
 
         }
 
-        public Object Clone()
+        public override object Clone()
         {
             return new Folder(
                 new FileEntry(

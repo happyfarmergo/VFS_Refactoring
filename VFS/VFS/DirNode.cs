@@ -2,114 +2,62 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace VFS
 {
+    [Serializable]
     public class DirNode : ICloneable
     {
-        public static int idCnt = 4;
-        public int ID { get; set; }
         public string Name { get; set; }
-        public int ParentID { get; set; }
+        public DirNode Parent { get; set; }
         public List<DirNode> Nodes { get; set; }
 
         public DirNode()
         {
             this.Nodes = new List<DirNode>();
-            this.ParentID = -1;
         }
 
-        public DirNode(int pid, string name)
+        public DirNode(string name, DirNode parent = null)
         {
             this.Nodes = new List<DirNode>();
-            this.ID = idCnt++;
-            this.ParentID = pid;
+            this.Parent = parent;
             this.Name = name;
         }
 
-        private DirNode(int id, int pid, string name, List<DirNode> nodes)
+        private DirNode(string name, DirNode parent, List<DirNode> nodes)
         {
-            this.ID = id;
-            this.ParentID = pid;
             this.Name = (string)name.Clone();
             this.Nodes = new List<DirNode>();
+            this.Parent = parent;
+            DirNode tmp = null;
             foreach (DirNode s in nodes)
             {
-                this.Nodes.Add((DirNode)s.Clone());
+                tmp = (DirNode)s.Clone();
+                this.Nodes.Add(tmp);
+                tmp.Parent = this;
             }
         }
 
         public Object Clone()
         {
-            return new DirNode(ID + idCnt, ParentID + idCnt, Name, Nodes);
+            return new DirNode(Name, Parent, Nodes);
         }
 
-        public static List<DirNode> BindDir(List<DirNode> nodes)
+        public static List<string> FindPath(DirNode node)
         {
-            List<DirNode> outputList = new List<DirNode>();
-            for (int i = 0; i < nodes.Count; ++i)
-            {
-                if (nodes[i].ParentID == -1)
-                {
-                    outputList.Add(nodes[i]);
-                }
-                else
-                {
-                    GetFather(nodes, nodes[i].ParentID).Nodes.Add(nodes[i]);
-                }
-            }
-            return outputList;
-        }
-
-        private static DirNode GetFather(List<DirNode> nodes, int id)
-        {
-            if (nodes == null) return null;
-            for (int i = 0; i < nodes.Count; ++i)
-            {
-                if (nodes[i].ID == id)
-                    return nodes[i];
-                DirNode node = GetFather(nodes[i].Nodes, id);
-                if (node != null)
-                    return node;
-            }
-            return null;
-        }
-
-        public static List<string> FindPathByID(DirNode root, int id)
-        {
+            DirNode root = null;
             List<string> path = new List<string>();
-            if (FindPath(ref path, root, id)) return path;
-            return null;
-        }
-
-        private static bool FindPath(ref List<string> path, DirNode root, int id)
-        {
-            path.Add(root.Name);
-            if (root.ID == id) return true;
-            foreach (DirNode node in root.Nodes)
+            path.Add(node.Name);
+            while ((root = node.Parent) != null)
             {
-                if (FindPath(ref path, node, id))
-                    return true;
+                path.Add(root.Name);
+                node = node.Parent;
             }
-            path.RemoveAt(path.Count - 1);
-            return false;
+            path.Reverse();
+            return path;
         }
 
-        private static int findMaxID(DirNode node)
-        {
-            int maxId = node.ID;
-            foreach (DirNode dirNode in node.Nodes)
-            {
-                int id = findMaxID(dirNode);
-                if (maxId < id) maxId = id;
-            }
-            return maxId;
-        }
-
-        public void UpdateID()
-        {
-            idCnt = findMaxID(this) + 1;
-        }
     }
 }

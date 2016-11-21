@@ -1,0 +1,52 @@
+﻿<Window x:Class="VFS.Writer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Writer" Height="400" Width="600">
+
+    <Window.Resources>
+        <Style TargetType="MenuItem">
+            <Setter Property="FontFamily" Value="Corbel"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <RoutedUICommand x:Key="IncreaseFontSize" Text="Font Size +"></RoutedUICommand>
+        <RoutedUICommand x:Key="DecreaseFontSize" Text="Font Size -"></RoutedUICommand>
+    </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+Alt+I" Command="{StaticResource IncreaseFontSize}"></KeyBinding>
+        <KeyBinding Gesture="Ctrl+Alt+D" Command="{StaticResource DecreaseFontSize}"></KeyBinding>
+    </Window.InputBindings>
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource IncreaseFontSize}" CanExecute="IncreaseSize_CanExecute"
+                        Executed="IncreaseSize_Executed"/>
+        <CommandBinding Command="{StaticResource DecreaseFontSize}" CanExecute="DecreaseSize_CanExecute"
+                        Executed="DecreaseSize_Executed"/>
+    </Window.CommandBindings>
+    <Grid>
+        <ScrollViewer HorizontalAlignment="Stretch" Margin="0,30,0,0" VerticalAlignment="Stretch">
+            <RichTextBox x:Name="textbox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                     FontSize="16" TextChanged="textbox_TextChanged">
+                <FlowDocument>
+                    <Paragraph>
+                        <Run Text=""/>
+                    </Paragraph>
+                </FlowDocument>
+            </RichTextBox>
+        </ScrollViewer>
+        <Menu HorizontalAlignment="Stretch" Height="30" VerticalAlignment="Top" Background="White">
+            <MenuItem Header="_File">
+                <MenuItem Command="ApplicationCommands.Save"/>
+                <MenuItem Command="ApplicationCommands.Close"/>
+            </MenuItem>
+            <MenuItem Header="_Pattern">
+                <MenuItem Command="{StaticResource IncreaseFontSize}"/>
+                <MenuItem Command="{StaticResource DecreaseFontSize}"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Command="ApplicationCommands.Help" Header="About"/>
+            </MenuItem>
+        </Menu>
+    </Grid>
+</Window>
+

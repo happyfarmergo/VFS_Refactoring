@@ -22,8 +22,11 @@
         <CommandBinding Command="ApplicationCommands.Undo" Executed="Undo_Executed"
                         CanExecute="Undo_CanExecute"/>
 
-        <CommandBinding Command="{x:Static MainWindow.RenameCmd}" Executed="Rename_Executed"
-                        CanExecute="Rename_CanExecute"/>
+        <CommandBinding Command="ApplicationCommands.Redo" Executed="Redo_Executed"
+                        CanExecute="Redo_CanExecute"/>
+
+        <!--<CommandBinding Command="{x:Static MainWindow.Rename}" Executed="Rename_Executed"
+                        CanExecute="Rename_CanExecute"/>-->
 
     </Window.CommandBindings>
 
@@ -76,7 +79,7 @@
             <MenuItem Header="_File" Width="40">
                 <MenuItem Command="ApplicationCommands.Open"/>
                 <MenuItem Command="ApplicationCommands.Delete"/>
-                <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
+                <!--<MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>-->
                 <MenuItem Header="New">
                     <MenuItem Header="Text" Click="NewTxtFile_Executed" />
                     <MenuItem Header="Folder" Click="NewFolder_Executed"/>
@@ -89,6 +92,7 @@
                 <MenuItem Command="ApplicationCommands.Paste" />
                 <MenuItem Command="ApplicationCommands.Copy" />
                 <MenuItem Command="ApplicationCommands.Undo" />
+                <MenuItem Command="ApplicationCommands.Redo" />
             </MenuItem>
             <MenuItem Header="_Help" Width="40">
                 <MenuItem Command="ApplicationCommands.Help" Header="About"/>
@@ -122,12 +126,13 @@
                     <ContextMenu>
                         <MenuItem Command="ApplicationCommands.Open" />
                         <MenuItem Command="ApplicationCommands.Delete"/>
-                        <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
+                        <!--<MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>-->
                         <Separator></Separator>
                         <MenuItem Command="ApplicationCommands.Cut" />
                         <MenuItem Command="ApplicationCommands.Paste" />
                         <MenuItem Command="ApplicationCommands.Copy" />
                         <MenuItem Command="ApplicationCommands.Undo"/>
+                        <MenuItem Command="ApplicationCommands.Redo"/>
                         <Separator></Separator>
                         <MenuItem Header="New">
                             <MenuItem Header="Text" Click="NewTxtFile_Executed"/>
@@ -161,13 +166,14 @@
                     </TreeView.ItemTemplate>
                 </TreeView>
                 <Grid x:Name="showGrid" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                    <DataGrid Name="dataGrid" AutoGenerateColumns="False">
+                    <DataGrid Name="dataGrid" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="True" SelectionMode="Single"
+                              GridLinesVisibility="Horizontal" MouseDoubleClick="dataGrid_MouseDoubleClick">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Width="200" Binding="{Binding BindingGroupName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <DataGridTextColumn Header="Modify Time" Width="200" Binding="{Binding BindingGroupName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BindingGroupName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <DataGridTextColumn Header="Size" Width="100" Binding="{Binding BindingGroupName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            
+                            <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Path=name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Modify Time" Width="200" Binding="{Binding Path=modifiedTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Type" Width="100" Binding="{Binding Path=type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Size" Width="100" Binding="{Binding Path=size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
