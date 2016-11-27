@@ -72,6 +72,12 @@
                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"></ContentPresenter>
             </Grid>
         </ControlTemplate>
+        <DataTemplate x:Key="listViewNameColumnTemplate">
+            <StackPanel Orientation="Horizontal">
+                <Image Source="{Binding Path=image}" Height="20"></Image>
+                <TextBlock Text="{Binding Path=name}" VerticalAlignment="Center"/>
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -165,18 +171,19 @@
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                 </TreeView>
-                <Grid x:Name="showGrid" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                    <DataGrid Name="dataGrid" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="True" SelectionMode="Single"
-                              GridLinesVisibility="Horizontal" MouseDoubleClick="dataGrid_MouseDoubleClick">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Path=name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Modify Time" Width="200" Binding="{Binding Path=modifiedTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Type" Width="100" Binding="{Binding Path=type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Size" Width="100" Binding="{Binding Path=size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
-
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
+                <ListView Name="listView" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          SelectionMode="Single" SelectionChanged="listView_SelectionChanged" MouseDoubleClick="listView_MouseDoubleClick">
+                    <ListView.View>
+                        <GridView>
+                            <GridView.Columns>
+                                <GridViewColumn Header="Name" Width="200" CellTemplate="{StaticResource listViewNameColumnTemplate}"/>
+                                <GridViewColumn Header="Modify Time" Width="200" DisplayMemberBinding="{Binding Path=modifiedTime}"/>
+                                <GridViewColumn Header="Type" Width="150" DisplayMemberBinding="{Binding Path=type}"/>
+                                <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Path=size}"/>
+                            </GridView.Columns>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
             </Grid>
         </Border>
 

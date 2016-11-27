@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -24,14 +26,17 @@ namespace VFS
     {
         public string name { get; set; }
         public EnumFileType type { get; set; }
+        public BitmapImage image { get; set; }
         public string modifiedTime { get; set; }
-        public int size { get; set; }            //kb
+        public string size { get; set; }            //kb
         public ShortFileInfo(string name, EnumFileType type, string modifiedtime, int size)
         {
             this.name = name;
             this.type = type;
             this.modifiedTime = modifiedtime;
-            this.size = size / 1024;
+            this.size = size / 1024 + "kb";
+            string uri = (type == EnumFileType.TxtFile ? "images/file.png" : "images/folder.png");
+            this.image = new BitmapImage(new Uri(uri, UriKind.Relative));
         }
     }
 
@@ -43,15 +48,15 @@ namespace VFS
         public FileEntry source;
         public FileEntry target;
         public string name;
-        public FileOperation(UndoRedoCmdType type, string name, FileEntry source, FileEntry target = null)
+        public EnumFileType fileType;
+        public FileOperation(UndoRedoCmdType type, string name, FileEntry source, FileEntry target = null, EnumFileType fileType = EnumFileType.TxtFile)
         {
             this.type = type;
             this.source = source;
             this.target = target;
             this.name = name;
+            this.fileType = fileType;
         }
-
-
     }
 
 
@@ -103,7 +108,7 @@ namespace VFS
         {
             get
             {
-                return clipBoard.Empty();
+                return !clipBoard.Empty();
             }
         }
 
@@ -123,6 +128,7 @@ namespace VFS
             }
         }
 
+        [NonSerialized]
         private List<ShortFileInfo> fileInfo;
         public List<ShortFileInfo> FileInfo
         {
@@ -133,6 +139,7 @@ namespace VFS
             }
         }
 
+        [NonSerialized]
         private List<DirNode> dirTree;
         public List<DirNode> DirTree
         {
@@ -252,7 +259,7 @@ namespace VFS
 
         private void fillInfo()
         {
-            fileInfo.Clear();
+            fileInfo = new List<ShortFileInfo>();
             foreach (FileEntry node in currentDir.children)
             {
                 fileInfo.Add(new ShortFileInfo(node.fileName, node.fileType, node.modifiedTime, node.size));
@@ -264,10 +271,10 @@ namespace VFS
         {
             if (dir == null) dir = currentDir;
             string save = name;
-            int cnt = 0, num = 2;
-            while ((cnt = ((Folder)dir).FindSameName(name, 1)) > 0)
+            int cnt = 0, num = 1;
+            while ((cnt = ((Folder)dir).FindSameName(name)) > 0)
             {
-                if (cnt != 0) name = save + "_" + num++;
+                name = save + "_" + num++;
             }
             return name;
         }
@@ -278,8 +285,7 @@ namespace VFS
             FileEntry node = newFileNode(name, type);
             diskManager.AllocFile(node);
             currentDir.InsertChild(node);
-            undoList.Push(new FileOperation(UndoRedoCmdType.New, name, currentDir));
-            fileInfo.Add(new ShortFileInfo(name, type, node.modifiedTime, node.size));
+            undoList.Push(new FileOperation(UndoRedoCmdType.New, name, currentDir, null, type));
             return name;
         }
 
@@ -289,8 +295,8 @@ namespace VFS
 
             Debug.Assert(node != null);
 
-            int cnt = currentDir.FindSameName(newName, 1);
-            if (cnt != 0) return false;
+            int cnt = currentDir.FindSameName(newName);
+            if (cnt > 0) return false;
 
             node.SetName(newName);
             undoList.Push(new FileOperation(UndoRedoCmdType.Rename, oldName, node));
@@ -311,17 +317,18 @@ namespace VFS
             clipBoard.Source = currentDir.FindChild(name);
         }
 
-        //father maybe deleted
         public void DeleteFile(string name)
         {
             FileEntry entry = currentDir.removeChild(name);
+            diskManager.DuplicateFreeFile(entry);
             undoList.Push(new FileOperation(UndoRedoCmdType.Delete, name, entry, currentDir));
         }
 
 
-        public string PasteFile()
+        public bool PasteFile()
         {
-            string newName = "";
+            if (currentDir.IsChildOf(clipBoard.Source)) return false;
+            string newName = null;
             switch (clipBoard.type)
             {
                 case CmdType.Cut:
@@ -331,9 +338,8 @@ namespace VFS
                     currentDir.InsertChild(tocut);
                     break;
                 case CmdType.Copy:
-                    //maybe error int clone()
                     FileEntry tocopy = (FileEntry)clipBoard.Source.Clone();
-                    newName = tocopy.fileName = getRightName(tocopy.fileName, clipBoard.Source.parent);
+                    newName = tocopy.fileName = getRightName(tocopy.fileName, currentDir);
                     undoList.Push(new FileOperation(UndoRedoCmdType.CopyPaste, newName, clipBoard.Source.parent, currentDir));
                     currentDir.InsertChild(tocopy);
                     break;
@@ -342,7 +348,7 @@ namespace VFS
 
             }
             clipBoard.Clear();
-            return newName;
+            return true;
         }
 
         public void UndoCmd()
@@ -350,15 +356,20 @@ namespace VFS
             if (undoList.Count > 0)
             {
                 FileOperation op = undoList.Peek();
+
                 switch (op.type)
                 {
                     case UndoRedoCmdType.New:
-                        ((Folder)op.source).DeleteChild(op.name);
+                        Folder source = op.source as Folder;
+                        FileEntry target = source.FindChild(op.name);
+                        diskManager.FreeFile(target);
+                        source.DeleteChild(target);
                         undoList.Pop();
                         redoList.Push(op);
                         break;
                     case UndoRedoCmdType.Delete:
                         ((Folder)op.target).InsertChild(op.source);
+                        diskManager.DuplicateAllocFile(op.source);
                         undoList.Pop();
                         redoList.Push(op);
                         break;
@@ -376,8 +387,7 @@ namespace VFS
                         redoList.Push(op);
                         break;
                     case UndoRedoCmdType.CopyPaste:
-                        FileEntry entry = ((Folder)op.target).FindChild(op.name);
-                        ((Folder)op.source).InsertChild((FileEntry)entry.Clone());
+                        ((Folder)op.target).DeleteChild(op.name);
                         undoList.Pop();
                         redoList.Push(op);
                         break;
@@ -390,13 +400,20 @@ namespace VFS
             if (redoList.Count > 0)
             {
                 FileOperation op = redoList.Peek();
+                FileEntry source, target, entry, file;
+                source = target = entry = file = null;
                 switch (op.type)
                 {
                     case UndoRedoCmdType.New:
-
+                        target = newFileNode(op.name, op.fileType);
+                        ((Folder)op.source).InsertChild(target);
+                        diskManager.AllocFile(target);
+                        redoList.Pop();
+                        undoList.Push(op);
                         break;
                     case UndoRedoCmdType.Delete:
-                        ((Folder)op.target).removeChild(op.source.fileName);
+                        entry = ((Folder)op.target).removeChild(op.source.fileName);
+                        diskManager.DuplicateFreeFile(entry);
                         redoList.Pop();
                         undoList.Push(op);
                         break;
@@ -408,13 +425,13 @@ namespace VFS
                         undoList.Push(op);
                         break;
                     case UndoRedoCmdType.CutPaste:
-                        FileEntry file = ((Folder)op.source).removeChild(op.name);
+                        file = ((Folder)op.source).removeChild(op.name);
                         ((Folder)op.target).InsertChild(file);
                         redoList.Pop();
                         undoList.Push(op);
                         break;
                     case UndoRedoCmdType.CopyPaste:
-                        FileEntry entry = (FileEntry)((Folder)op.source).FindChild(op.name).Clone();
+                        entry = (FileEntry)((Folder)op.source).FindChild(op.name).Clone();
                         ((Folder)op.target).InsertChild(entry);
                         redoList.Pop();
                         undoList.Push(op);

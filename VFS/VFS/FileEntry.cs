@@ -175,10 +175,11 @@ namespace VFS
             this.lastBlock = entry.lastBlock;
             this.parent = entry.parent;
             this.fileType = EnumFileType.Folder;
+            this.children = new List<FileEntry>();
 
-            //problems
             foreach (FileEntry file in children)
             {
+                file.parent = this;
                 this.children.Add((FileEntry)file.Clone());
             }
 
@@ -234,26 +235,24 @@ namespace VFS
             this.children.Remove(this.FindChild(name));
         }
 
-        public int FindSameName(string name, int flag)
+        public int FindSameName(string name)
         {
-            int cnt = 0;
             foreach (FileEntry entry in this.children)
             {
-                if (flag == 0)
-                {
-                    if (entry.fileName.Length > name.Length)
-                    {
-                        if (entry.fileName.Substring(0, name.Length).Equals(name))
-                            cnt++;
-                    }
-                }
-                else
-                {
-                    if (entry.fileName.Equals(name))
-                        return 1;
-                }
+                if (entry.fileName.Equals(name))
+                    return 1;
             }
-            return cnt;
+            return 0;
+        }
+
+        public bool IsChildOf(FileEntry root)
+        {
+            FileEntry entry = this;
+            while (entry != null && entry != root)
+            {
+                entry = entry.parent;
+            }
+            return entry != null;
         }
     }
 }

@@ -66,22 +66,22 @@ namespace VFS
 
         private void Open_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            OpenItem(GetSelectedEntry(this.dataGrid.SelectedItem));
+            OpenItem(GetSelectedEntry(itemInfo));
         }
 
         private void Open_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = this.dataGrid.SelectedItem != null;
+            e.CanExecute = itemInfo != null;
         }
 
-        private void dataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            OpenItem(GetSelectedEntry(this.dataGrid.SelectedItem));
+            OpenItem(GetSelectedEntry(itemInfo));
         }
 
         private void Delete_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            FileEntry entry = GetSelectedEntry(this.dataGrid.SelectedItem);
+            FileEntry entry = GetSelectedEntry(itemInfo);
             mFs.DeleteFile(entry.fileName);
             if (entry.fileType == EnumFileType.Folder)
             {
@@ -92,44 +92,50 @@ namespace VFS
 
         private void Delete_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = this.dataGrid.SelectedItem != null;
+            e.CanExecute = itemInfo != null;
 
         }
 
-
         private void Cut_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            FileEntry entry = GetSelectedEntry(this.dataGrid.SelectedItem);
+            FileEntry entry = GetSelectedEntry(itemInfo);
             mFs.CutFile(entry.fileName);
             if (entry.fileType == EnumFileType.Folder)
             {
                 UpdateTreeView();
             }
             UpdateShowGrid();
+            itemInfo = null;
         }
 
         private void Cut_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = this.dataGrid.SelectedItem != null;
+            e.CanExecute = itemInfo != null;
 
         }
 
 
         private void Copy_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            FileEntry entry = GetSelectedEntry(this.dataGrid.SelectedItem);
+            FileEntry entry = GetSelectedEntry(itemInfo);
             mFs.CopyFile(entry.fileName);
+
         }
 
         private void Copy_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = this.dataGrid.SelectedItem != null;
+            e.CanExecute = itemInfo != null;
         }
 
 
         private void Paste_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            mFs.PasteFile();
+            bool res = mFs.PasteFile();
+            if (!res)
+            {
+                MessageBox.Show(this, "the target folder is under the source folder!", "An Stopped Operation", MessageBoxButton.OK);
+                return;
+            }
             UpdateTreeView();
             UpdateShowGrid();
         }
@@ -163,35 +169,43 @@ namespace VFS
             e.CanExecute = mFs.CanRedo;
         }
 
-        private FileEntry GetSelectedEntry(object item)
+        private FileEntry GetSelectedEntry(ShortFileInfo fileInfo)
         {
-            ShortFileInfo fileInfo = (ShortFileInfo)item;
             Debug.Assert(fileInfo != null);
             return mFs.currentDir.FindChild(fileInfo.name);
         }
 
         private void Rename_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            RenameWindow renameWindow = new RenameWindow(GetSelectedEntry(this.dataGrid.SelectedItem).fileName);
+            RenameWindow renameWindow = new RenameWindow(GetSelectedEntry(itemInfo).fileName);
             renameWindow.Owner = this;
             renameWindow.Show();
+            itemInfo = null;
         }
 
         private void Rename_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = this.dataGrid.SelectedItem != null;
+            e.CanExecute = itemInfo != null;
         }
 
 
         private void Property_Executed()
         {
             FileEntry file = mFs.currentDir.FindChild(
-                ((ShortFileInfo)this.dataGrid.SelectedItem).name);
+                ((ShortFileInfo)itemInfo).name);
             PropertyWindow window = new PropertyWindow(file);
             window.Owner = this;
             window.Show();
+
         }
 
+
+        private void listView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            itemInfo = listView.SelectedItem as ShortFileInfo;
+        }
+
+        private ShortFileInfo itemInfo;
         private MyFileSystem mFs;
         private List<List<string>> mHistoryPath;
         private List<List<string>> mFuturePath;
@@ -209,8 +223,8 @@ namespace VFS
                 mFs = MyFileSystem.Instance();
                 mFs.EnterNextDir("user");
             }
-            this.dirView.ItemsSource = mFs.DirTree;
-            this.dataGrid.ItemsSource = mFs.FileInfo;
+            UpdateShowGrid();
+            UpdateTreeView();
             this.tbDir.Text = mFs.currentDir.getFileLoc();
         }
 
@@ -219,9 +233,9 @@ namespace VFS
             if (entry == null) return;
             if (entry.fileType == EnumFileType.Folder)
             {
-                mFs.EnterNextDir(entry.fileName);
                 mHistoryPath.Add(mFs.currentDir.getFilePath());
                 if (mHistoryPath.Count > 20) mHistoryPath.RemoveAt(0);
+                mFs.EnterNextDir(entry.fileName);
 
                 tbDir.Text = mFs.currentDir.getFileLoc();
                 UpdateShowGrid();
@@ -257,8 +271,8 @@ namespace VFS
 
         public void UpdateShowGrid()
         {
-            this.dataGrid.ItemsSource = null;
-            this.dataGrid.ItemsSource = mFs.FileInfo;
+            this.listView.ItemsSource = null;
+            this.listView.ItemsSource = mFs.FileInfo;
 
             this.leftLabel.Content = "" + mFs.FileInfo.Count + " items";
             this.rightLabel.Content = String.Format(LabelFormat,
@@ -273,12 +287,15 @@ namespace VFS
             this.dirView.ItemsSource = mFs.DirTree;
         }
 
+        //about change directory
+        #region 
+
         private void Return_Click(object sender, RoutedEventArgs e)
         {
             if (mHistoryPath.Count == 0) return;
+            mFuturePath.Add(mFs.currentDir.getFilePath());
             if (mFs.ChangeDir(mHistoryPath.Last()))
             {
-                mFuturePath.Add(mHistoryPath.Last());
                 if (mFuturePath.Count > 20) mFuturePath.RemoveAt(0);
                 mHistoryPath.Remove(mHistoryPath.Last());
                 tbDir.Text = mFs.currentDir.getFileLoc();
@@ -286,6 +303,7 @@ namespace VFS
             }
             else
             {
+                mFuturePath.Remove(mFuturePath.Last());
                 LocationNotAvailable(mHistoryPath.Last());
             }
         }
@@ -293,9 +311,9 @@ namespace VFS
         private void Go_Click(object sender, RoutedEventArgs e)
         {
             if (mFuturePath.Count == 0) return;
+            mHistoryPath.Add(mFs.currentDir.getFilePath());
             if (mFs.ChangeDir(mFuturePath.Last()))
             {
-                mHistoryPath.Add(mFuturePath.Last());
                 if (mHistoryPath.Count > 20) mHistoryPath.RemoveAt(0);
                 mFuturePath.Remove(mFuturePath.Last());
                 tbDir.Text = mFs.currentDir.getFileLoc();
@@ -303,18 +321,24 @@ namespace VFS
             }
             else
             {
+                mHistoryPath.Remove(mHistoryPath.Last());
                 LocationNotAvailable(mFuturePath.Last());
             }
         }
 
         private void Up_Click(object sender, RoutedEventArgs e)
         {
+
+            mHistoryPath.Add(mFs.currentDir.getFilePath());
             if (mFs.ReturnPreDir())
             {
-                mHistoryPath.Add(mFs.currentDir.getFilePath());
                 if (mHistoryPath.Count > 20) mHistoryPath.RemoveAt(0);
                 tbDir.Text = mFs.currentDir.getFileLoc();
                 UpdateShowGrid();
+            }
+            else
+            {
+                mHistoryPath.Remove(mHistoryPath.Last());
             }
         }
 
@@ -332,9 +356,13 @@ namespace VFS
             mFuturePath.Clear();
         }
 
+        #endregion
+        //about serialization
+        #region
 
         private void Initialize()
         {
+            itemInfo = null;
             mHistoryPath = new List<List<string>>();
             mFuturePath = new List<List<string>>();
 
@@ -373,8 +401,6 @@ namespace VFS
             return res;
         }
 
-
-
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
@@ -384,5 +410,6 @@ namespace VFS
             fstream.Close();
         }
 
+        #endregion
     }
 }

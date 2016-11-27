@@ -40,6 +40,8 @@ namespace VFS
 
         public void AllocFile(FileEntry fcb)
         {
+            if (fcb.fileType == EnumFileType.Folder) return;
+
             int blockNum = numOfBlock(fcb.size);
             Used += blockNum;
 
@@ -51,11 +53,43 @@ namespace VFS
 
         public void FreeFile(FileEntry fcb)
         {
+            if (fcb.fileType == EnumFileType.Folder) return;
+
             int blockNum = numOfBlock(fcb.size);
             Used -= blockNum;
 
             freeFrom(fcb.firstBlock, blockNum);
             if (fcb.firstBlock < mapHead) mapHead = fcb.firstBlock;
+        }
+
+        public void DuplicateAllocFile(FileEntry fcb)
+        {
+            if (fcb.fileType == EnumFileType.TxtFile)
+            {
+                AllocFile(fcb);
+            }
+            else
+            {
+                foreach (FileEntry entry in ((Folder)fcb).children)
+                {
+                    DuplicateAllocFile(entry);
+                }
+            }
+        }
+
+        public void DuplicateFreeFile(FileEntry fcb)
+        {
+            if (fcb.fileType == EnumFileType.TxtFile)
+            {
+                FreeFile(fcb);
+            }
+            else
+            {
+                foreach (FileEntry entry in ((Folder)fcb).children)
+                {
+                    DuplicateFreeFile(entry);
+                }
+            }
         }
 
         public void UpdateFile(FileEntry fcb, int targetSize)
