@@ -3,3 +3,4 @@ Testing
 1.右键空白区域 点击属性，界面崩溃，warning；NullReferenceException Class
 出错原因：iteminfo记录点击状态，但是没有验证当前是否选中
 出错区域：MyDiskManager.cs 129行
+界面崩溃状态描述；点击无效，界面内 关闭无效 vs整体关闭 有效；右键菜单栏叠加在当前系统打开的任何页面上
