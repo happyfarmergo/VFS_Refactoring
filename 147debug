@@ -1,0 +1,13 @@
+About bug
+Testing property
+1.右键空白区域 点击属性，界面崩溃，warning；NullReferenceException Class
+出错原因：iteminfo记录点击状态，但是没有验证当前是否选中
+出错区域：MyDiskManager.cs 129行
+界面崩溃状态描述；点击无效，界面内 关闭无效 vs整体关闭 有效；右键菜单栏叠加在当前系统打开的任何页面上
+错误解决方式：https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(EHNullReference);k(TargetFrameworkMoniker-.NETFramework,Version%3Dv4.5)&rd=trueYou get a null return value from a method, and then call a method on the returned type. This sometimes is the result of a documentation error; the documentation fails to note that a method call can return null. In other cases, your code erroneously assumes that the method will always return a non-null value.
+2.选中文件，点击菜单栏，界面崩溃，显示（无响应）
+3.无法查看右侧树状图的属性，同崩溃
+Testing new
+1.new_txt的size设置
+2.无法通过右键菜单栏新建文件或者文档
+3.新建文档后，查看属性，闪退，再次进入后，新建的文件没有存档
