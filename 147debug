@@ -1,2 +1,5 @@
 About bug
 Testing
+1.右键空白区域 点击属性，界面崩溃，warning；NullReferenceException Class
+出错原因：iteminfo记录点击状态，但是没有验证当前是否选中
+出错区域：MyDiskManager.cs 129行
