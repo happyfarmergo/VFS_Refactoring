@@ -34,7 +34,7 @@ namespace VFS
             this.name = name;
             this.type = type;
             this.modifiedTime = modifiedtime;
-            this.size = size / 1024 + "kb";
+            this.size = this.type == EnumFileType.TxtFile ? MyDiskManager.Instance().numOfBlock(size) + "kb" : "";
             string uri = (type == EnumFileType.TxtFile ? "images/file.png" : "images/folder.png");
             this.image = new BitmapImage(new Uri(uri, UriKind.Relative));
         }
@@ -88,7 +88,7 @@ namespace VFS
     [Serializable]
     class MyFileSystem
     {
-        private static MyFileSystem instance;
+        private static MyFileSystem instance = null;
 
         public static MyFileSystem Instance()
         {
@@ -162,6 +162,8 @@ namespace VFS
         }
         public int DiskSize = MyDiskManager.BLOCK_NUM;
 
+        [NonSerialized]
+        private List<MainWindow> windowList;
 
         protected MyFileSystem()
         {
@@ -198,6 +200,49 @@ namespace VFS
             fileInfo = new List<ShortFileInfo>();
             undoList = new Stack<FileOperation>();
             redoList = new Stack<FileOperation>();
+            windowList = new List<MainWindow>();
+        }
+
+        public void InitRegister()
+        {
+            if (windowList == null)
+            {
+                windowList = new List<MainWindow>();
+            }
+            else
+            {
+                windowList.Clear();
+            }
+        }
+
+        public void RegisterWindow(MainWindow window)
+        {
+            windowList.Add(window);
+        }
+
+        public void UnRegisterWindow(int cnt)
+        {
+            foreach (MainWindow w in windowList)
+            {
+                if (cnt == w.windowCnt)
+                {
+                    windowList.Remove(w);
+                    return;
+                }
+            }
+        }
+
+        public bool LastWindow(MainWindow window)
+        {
+            return windowList.Count == 1 && windowList[0].windowCnt == window.windowCnt;
+        }
+
+        public void notifyAll()
+        {
+            foreach (MainWindow w in windowList)
+            {
+                w.notify();
+            }
         }
 
 
@@ -286,6 +331,7 @@ namespace VFS
             diskManager.AllocFile(node);
             currentDir.InsertChild(node);
             undoList.Push(new FileOperation(UndoRedoCmdType.New, name, currentDir, null, type));
+            notifyAll();
             return name;
         }
 
@@ -300,6 +346,7 @@ namespace VFS
 
             node.SetName(newName);
             undoList.Push(new FileOperation(UndoRedoCmdType.Rename, oldName, node));
+            notifyAll();
             return true;
         }
 
@@ -322,6 +369,7 @@ namespace VFS
             FileEntry entry = currentDir.removeChild(name);
             diskManager.DuplicateFreeFile(entry);
             undoList.Push(new FileOperation(UndoRedoCmdType.Delete, name, entry, currentDir));
+            notifyAll();
         }
 
 
@@ -348,6 +396,7 @@ namespace VFS
 
             }
             clipBoard.Clear();
+            notifyAll();
             return true;
         }
 
@@ -392,6 +441,7 @@ namespace VFS
                         redoList.Push(op);
                         break;
                 }
+                notifyAll();
             }
         }
 
@@ -437,10 +487,11 @@ namespace VFS
                         undoList.Push(op);
                         break;
                 }
+                notifyAll();
             }
         }
 
-        
+
 
         public void EnterNextDir(string name)
         {
@@ -462,6 +513,7 @@ namespace VFS
         public void UpdateFile(FileEntry node)
         {
             diskManager.UpdateFile(node, ((File)node).content.Length);
+            notifyAll();
         }
 
         public int GetFileSizeOnDisk(FileEntry header)

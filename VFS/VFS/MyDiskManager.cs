@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
 
@@ -34,15 +35,16 @@ namespace VFS
         {
             disk = new MyDisk(BLOCK_SIZE, BLOCK_NUM);
             bitmap = new byte[BLOCK_NUM + 1];
+            for (int i = 1; i <= BLOCK_NUM; ++i) bitmap[i] = 0;
             mapHead = 1;
             Used = 0;
         }
 
         public void AllocFile(FileEntry fcb)
         {
-            if (fcb.fileType == EnumFileType.Folder) return;
-
             int blockNum = numOfBlock(fcb.size);
+            if (fcb.fileType == EnumFileType.Folder || blockNum == 0) return;
+
             Used += blockNum;
 
             int end = allocFrom(mapHead, blockNum);
@@ -53,12 +55,12 @@ namespace VFS
 
         public void FreeFile(FileEntry fcb)
         {
-            if (fcb.fileType == EnumFileType.Folder) return;
-
             int blockNum = numOfBlock(fcb.size);
+            if (fcb.fileType == EnumFileType.Folder || blockNum == 0) return;
+
             Used -= blockNum;
 
-            freeFrom(fcb.firstBlock, blockNum);
+            freeFrom(fcb.firstBlock, fcb.lastBlock);
             if (fcb.firstBlock < mapHead) mapHead = fcb.firstBlock;
         }
 
@@ -94,32 +96,15 @@ namespace VFS
 
         public void UpdateFile(FileEntry fcb, int targetSize)
         {
-            int fromNum = numOfBlock(fcb.size);
-            int toNum = numOfBlock(targetSize);
+            FreeFile(fcb);
             fcb.size = targetSize;
-            if (toNum == fromNum) return;
-            Used += toNum - fromNum;
-            int extra;
-            if (toNum > fromNum)
-            {
-                extra = toNum - fromNum;
-                disk.diskSpace[fcb.lastBlock] = mapHead;
-                int end = allocFrom(mapHead, extra);
-                fcb.lastBlock = end;
-                mapHead = nextFreeBlock(end + 1);
-            }
-            else
-            {
-                extra = fromNum - toNum;
-                if (fcb.firstBlock < mapHead) mapHead = fcb.firstBlock;
-                fcb.firstBlock = freeFrom(fcb.firstBlock, extra);
-            }
+            AllocFile(fcb);
         }
 
         public int numOfBlock(int size)
         {
             int blockNum = size / BLOCK_SIZE;
-            if (size % BLOCK_SIZE != 0 || size == 0) blockNum += 1;
+            if (size % BLOCK_SIZE != 0) blockNum += 1;
             return blockNum;
         }
 
@@ -166,14 +151,15 @@ namespace VFS
             return -1;
         }
 
-        private int freeFrom(int start, int length)              //the next of the last
+        private void freeFrom(int start, int end)
         {
-            for (int i = 0; i < length; ++i)
+            while (start != end)
             {
                 bitmap[start] = 0;
                 start = disk.diskSpace[start];
             }
-            return start;
+            Debug.Assert(disk.diskSpace[start] == -1);
+            bitmap[start] = 0;
         }
     }
 }

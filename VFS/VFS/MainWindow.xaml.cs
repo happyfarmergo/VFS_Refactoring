@@ -52,15 +52,12 @@ namespace VFS
         private void NewTxtFile_Executed(object sender, RoutedEventArgs e)
         {
             mFs.NewFile("new_text", EnumFileType.TxtFile);
-            UpdateShowGrid();
         }
 
 
         private void NewFolder_Executed(object sender, RoutedEventArgs e)
         {
             string realName = mFs.NewFile("new_folder", EnumFileType.Folder);
-            UpdateTreeView();
-            UpdateShowGrid();
         }
 
 
@@ -76,18 +73,14 @@ namespace VFS
 
         private void listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            OpenItem(GetSelectedEntry(itemInfo));
+            if (itemInfo != null)
+                OpenItem(GetSelectedEntry(itemInfo));
         }
 
         private void Delete_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             FileEntry entry = GetSelectedEntry(itemInfo);
             mFs.DeleteFile(entry.fileName);
-            if (entry.fileType == EnumFileType.Folder)
-            {
-                UpdateTreeView();
-            }
-            UpdateShowGrid();
         }
 
         private void Delete_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -100,18 +93,12 @@ namespace VFS
         {
             FileEntry entry = GetSelectedEntry(itemInfo);
             mFs.CutFile(entry.fileName);
-            if (entry.fileType == EnumFileType.Folder)
-            {
-                UpdateTreeView();
-            }
-            UpdateShowGrid();
             itemInfo = null;
         }
 
         private void Cut_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = itemInfo != null;
-
         }
 
 
@@ -136,8 +123,6 @@ namespace VFS
                 MessageBox.Show(this, "the target folder is under the source folder!", "An Stopped Operation", MessageBoxButton.OK);
                 return;
             }
-            UpdateTreeView();
-            UpdateShowGrid();
         }
 
         private void Paste_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -148,8 +133,6 @@ namespace VFS
         private void Undo_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             mFs.UndoCmd();
-            UpdateTreeView();
-            UpdateShowGrid();
         }
 
         private void Undo_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -160,8 +143,6 @@ namespace VFS
         private void Redo_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             mFs.RedoCmd();
-            UpdateTreeView();
-            UpdateShowGrid();
         }
 
         private void Redo_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -191,12 +172,10 @@ namespace VFS
 
         private void Property_Executed()
         {
-            FileEntry file = mFs.currentDir.FindChild(
-                ((ShortFileInfo)itemInfo).name);
+            FileEntry file = itemInfo == null ? mFs.currentDir : GetSelectedEntry(itemInfo);
             PropertyWindow window = new PropertyWindow(file);
             window.Owner = this;
             window.Show();
-
         }
 
 
@@ -209,6 +188,15 @@ namespace VFS
         private MyFileSystem mFs;
         private List<List<string>> mHistoryPath;
         private List<List<string>> mFuturePath;
+        private static int window_total = 0;
+        private int window_cnt;
+        public int windowCnt
+        {
+            get
+            {
+                return window_cnt;
+            }
+        }
 
         private const string saveLoc = "MyFileSystem.dat";
 
@@ -223,9 +211,43 @@ namespace VFS
                 mFs = MyFileSystem.Instance();
                 mFs.EnterNextDir("user");
             }
+            mFs.InitRegister();
+            mFs.RegisterWindow(this);
+
             UpdateShowGrid();
             UpdateTreeView();
+
             this.tbDir.Text = mFs.currentDir.getFileLoc();
+            window_cnt = ++window_total;
+        }
+
+        public MainWindow(int t)
+        {
+            InitializeComponent();
+
+            Initialize();
+
+            mFs = MyFileSystem.Instance();
+            mFs.RegisterWindow(this);
+
+            UpdateShowGrid();
+            UpdateTreeView();
+
+            this.tbDir.Text = mFs.currentDir.getFileLoc();
+
+            window_cnt = t;
+        }
+
+        private void NewWindow_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow window = new MainWindow(++window_total);
+            window.Show();
+        }
+
+        public void notify()
+        {
+            UpdateShowGrid();
+            UpdateTreeView();
         }
 
         private void OpenItem(FileEntry entry)
@@ -288,7 +310,7 @@ namespace VFS
         }
 
         //about change directory
-        #region 
+        #region
 
         private void Return_Click(object sender, RoutedEventArgs e)
         {
@@ -342,10 +364,12 @@ namespace VFS
             }
         }
 
+
+
         private void LocationNotAvailable(List<string> path)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("LJH:");
+            //sb.Append("LJH:");
             foreach (string s in path)
             {
                 sb.Append("\\" + s);
@@ -404,10 +428,14 @@ namespace VFS
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
-            Stream fstream = new FileStream(saveLoc, FileMode.Create, FileAccess.ReadWrite);
-            BinaryFormatter binFormat = new BinaryFormatter();
-            binFormat.Serialize(fstream, mFs);
-            fstream.Close();
+            if (mFs.LastWindow(this))
+            {
+                Stream fstream = new FileStream(saveLoc, FileMode.Create, FileAccess.ReadWrite);
+                BinaryFormatter binFormat = new BinaryFormatter();
+                binFormat.Serialize(fstream, mFs);
+                fstream.Close();
+            }
+            mFs.UnRegisterWindow(this.window_cnt);
         }
 
         #endregion

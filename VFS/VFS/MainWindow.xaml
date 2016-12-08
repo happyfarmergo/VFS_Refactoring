@@ -25,22 +25,27 @@
         <CommandBinding Command="ApplicationCommands.Redo" Executed="Redo_Executed"
                         CanExecute="Redo_CanExecute"/>
 
-        <!--<CommandBinding Command="{x:Static MainWindow.Rename}" Executed="Rename_Executed"
-                        CanExecute="Rename_CanExecute"/>-->
+        <!--一定要加local:-->
+        <CommandBinding Command="{x:Static local:MainWindow.RenameCmd}" Executed="Rename_Executed"
+                        CanExecute="Rename_CanExecute"/>
 
     </Window.CommandBindings>
 
     <Window.Resources>
         <Style TargetType="MenuItem">
-            <Setter Property="FontFamily" Value="Corbel"/>
+            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
             <Setter Property="Margin" Value="2"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Width" Value="190"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
         </Style>
         <Style TargetType="Label">
-            <Setter Property="FontFamily" Value="Corbel"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="2"/>
         </Style>
         <ControlTemplate x:Key="ButtonTemplate1" TargetType="{x:Type Button}">
             <Grid>
@@ -85,7 +90,7 @@
             <MenuItem Header="_File" Width="40">
                 <MenuItem Command="ApplicationCommands.Open"/>
                 <MenuItem Command="ApplicationCommands.Delete"/>
-                <!--<MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>-->
+                <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
                 <MenuItem Header="New">
                     <MenuItem Header="Text" Click="NewTxtFile_Executed" />
                     <MenuItem Header="Folder" Click="NewFolder_Executed"/>
@@ -110,6 +115,7 @@
                 <ColumnDefinition Width="60"></ColumnDefinition>
                 <ColumnDefinition Width="60"></ColumnDefinition>
                 <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="50"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition></RowDefinition>
@@ -123,30 +129,14 @@
             <Button Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"
                 Template="{StaticResource ButtonTemplate3}" Click="Up_Click"/>
 
-            <TextBox x:Name="tbDir" Grid.Column="3" BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="25,5,10,5"
-                     FontSize="18" FontFamily="Corbel"/>
+            <TextBox x:Name="tbDir" Grid.Column="3" BorderBrush="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="25,8,10,8"
+                     FontSize="14" FontFamily="Microsoft YaHei"/>
+            <Button Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Template="{StaticResource ButtonTemplate2}" Click="NewWindow_Click"/>
+            
         </Grid>
         <Border HorizontalAlignment="Stretch" Margin="5,80,5,40" VerticalAlignment="Stretch" BorderThickness="1" BorderBrush="Black">
             <Grid HorizontalAlignment="Stretch"  VerticalAlignment="Stretch">
-                <Grid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Command="ApplicationCommands.Open" />
-                        <MenuItem Command="ApplicationCommands.Delete"/>
-                        <!--<MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>-->
-                        <Separator></Separator>
-                        <MenuItem Command="ApplicationCommands.Cut" />
-                        <MenuItem Command="ApplicationCommands.Paste" />
-                        <MenuItem Command="ApplicationCommands.Copy" />
-                        <MenuItem Command="ApplicationCommands.Undo"/>
-                        <MenuItem Command="ApplicationCommands.Redo"/>
-                        <Separator></Separator>
-                        <MenuItem Header="New">
-                            <MenuItem Header="Text" Click="NewTxtFile_Executed"/>
-                            <MenuItem Header="Folder" Click="NewFolder_Executed"/>
-                        </MenuItem>
-                        <MenuItem Command="ApplicationCommands.Properties"/>
-                    </ContextMenu>
-                </Grid.ContextMenu>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200"></ColumnDefinition>
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
@@ -155,29 +145,48 @@
                 <GridSplitter Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Stretch"
                           ShowsPreview="True" Width="5"></GridSplitter>
                 <TreeView Grid.Column="0" x:Name="dirView" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          SelectedItemChanged="dirView_SelectedItemChanged" FontFamily="Arial">
+                          SelectedItemChanged="dirView_SelectedItemChanged">
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="TreeViewItem">
                             <Setter Property="IsExpanded" Value="True"/>
-                            <Setter Property="FontSize" Value="15"/>
+                            <Setter Property="FontSize" Value="12"/>
                         </Style>
                     </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Path=Nodes}">
                             <StackPanel Orientation="Horizontal">
                                 <Image VerticalAlignment="Center" Source="images/icon_folder.png"/>
-                                <TextBlock VerticalAlignment="Center" Text="{Binding Name}"></TextBlock>
+                                <Label VerticalAlignment="Center" Content="{Binding Name}"></Label>
                             </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                 </TreeView>
                 <ListView Name="listView" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                           SelectionMode="Single" SelectionChanged="listView_SelectionChanged" MouseDoubleClick="listView_MouseDoubleClick">
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Command="ApplicationCommands.Open" />
+                            <MenuItem Command="ApplicationCommands.Delete"/>
+                            <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
+                            <Separator></Separator>
+                            <MenuItem Command="ApplicationCommands.Cut" />
+                            <MenuItem Command="ApplicationCommands.Paste" />
+                            <MenuItem Command="ApplicationCommands.Copy" />
+                            <MenuItem Command="ApplicationCommands.Undo"/>
+                            <MenuItem Command="ApplicationCommands.Redo"/>
+                            <Separator></Separator>
+                            <MenuItem Header="New">
+                                <MenuItem Header="Text" Click="NewTxtFile_Executed"/>
+                                <MenuItem Header="Folder" Click="NewFolder_Executed"/>
+                            </MenuItem>
+                            <MenuItem Command="ApplicationCommands.Properties"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridView.Columns>
                                 <GridViewColumn Header="Name" Width="200" CellTemplate="{StaticResource listViewNameColumnTemplate}"/>
-                                <GridViewColumn Header="Modify Time" Width="200" DisplayMemberBinding="{Binding Path=modifiedTime}"/>
+                                <GridViewColumn Header="Modified Time" Width="200" DisplayMemberBinding="{Binding Path=modifiedTime}"/>
                                 <GridViewColumn Header="Type" Width="150" DisplayMemberBinding="{Binding Path=type}"/>
                                 <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Path=size}"/>
                             </GridView.Columns>
@@ -187,7 +196,7 @@
             </Grid>
         </Border>
 
-        <Label x:Name="leftLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="300" Margin="10,0,0,6.4"/>
-        <Label x:Name="rightLabel" Content="" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="350" Margin="610,0,33.6,6.4"/>
+        <Label x:Name="leftLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="150" Margin="10,0,0,6.4"/>
+        <Label x:Name="rightLabel" Content="" HorizontalAlignment="Right" HorizontalContentAlignment="Right" VerticalAlignment="Bottom" Width="350" Margin="0,0,9.6,6.4"/>
     </Grid>
 </Window>
