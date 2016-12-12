@@ -88,7 +88,7 @@ namespace VFS
     [Serializable]
     class MyFileSystem
     {
-        private static MyFileSystem instance = null;
+        private static MyFileSystem instance;
 
         public static MyFileSystem Instance()
         {
@@ -97,6 +97,10 @@ namespace VFS
                 instance = new MyFileSystem();
             }
             return instance;
+        }
+        public static void SetInstance(MyFileSystem mfs)
+        {
+            instance = mfs;
         }
 
         private MyDiskManager diskManager;
@@ -232,9 +236,9 @@ namespace VFS
             }
         }
 
-        public bool LastWindow(MainWindow window)
+        public bool LastWindow()
         {
-            return windowList.Count == 1 && windowList[0].windowCnt == window.windowCnt;
+            return windowList.Count == 0;
         }
 
         public void notifyAll()
@@ -311,7 +315,6 @@ namespace VFS
             }
         }
 
-        //?
         private string getRightName(string name, FileEntry dir = null)
         {
             if (dir == null) dir = currentDir;

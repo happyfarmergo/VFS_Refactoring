@@ -31,10 +31,10 @@ namespace VFS
                "images/file.png" : "images/folder.png");
             this.image.Source = new BitmapImage(new Uri(uri, UriKind.Relative));
             this.textbox.Text = file.fileName;
-            this.tbFileType.Text = (file.fileType == EnumFileType.TxtFile ? "Txt" : "Folder");
+            this.tbFileType.Text = (file.fileType == EnumFileType.TxtFile ? "Text File" : "Folder");
             this.tbFileLoc.Text = file.getFileLoc();
             this.tbFileSize.Text = file.size.ToString() + " bytes";
-            this.tbFileSizeOnDisk.Text = MyFileSystem.Instance().GetFileSizeOnDisk(file).ToString();
+            this.tbFileSizeOnDisk.Text = MyFileSystem.Instance().GetFileSizeOnDisk(file).ToString() + " kb";
             this.tbFileCreated.Text = file.createdTime;
             this.tbFileModified.Text = file.modifiedTime;
             this.tbFileOnDiskLoc.Text = "start at " + file.firstBlock + ", end at " + file.lastBlock;

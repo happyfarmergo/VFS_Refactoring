@@ -132,9 +132,9 @@
     <Resource Include="images\file.png" />
     <Resource Include="images\folder.png" />
     <Resource Include="images\icon.png" />
-    <Resource Include="images\icon_folder.png" />
     <Resource Include="images\left.png" />
     <Resource Include="images\right.png" />
+    <Resource Include="images\sharp.png" />
     <Resource Include="images\up.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

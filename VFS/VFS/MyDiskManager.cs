@@ -111,6 +111,7 @@ namespace VFS
         public int GetFileSizeOnDisk(FileEntry fcb)
         {
             int start = fcb.firstBlock, blockNum = 0;
+            if (start == 0) return 0;
             while (start != -1)
             {
                 start = disk.diskSpace[start];

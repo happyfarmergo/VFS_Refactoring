@@ -416,6 +416,7 @@ namespace VFS
                 Stream fstream = new FileStream(saveLoc, FileMode.Open, FileAccess.Read);
                 BinaryFormatter binFormat = new BinaryFormatter();
                 mFs = (MyFileSystem)binFormat.Deserialize(fstream);
+                MyFileSystem.SetInstance(mFs);
                 fstream.Close();
             }
             catch (FileNotFoundException e)
@@ -428,14 +429,14 @@ namespace VFS
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
-            if (mFs.LastWindow(this))
+            mFs.UnRegisterWindow(this.window_cnt);
+            if (mFs.LastWindow())
             {
                 Stream fstream = new FileStream(saveLoc, FileMode.Create, FileAccess.ReadWrite);
                 BinaryFormatter binFormat = new BinaryFormatter();
                 binFormat.Serialize(fstream, mFs);
                 fstream.Close();
             }
-            mFs.UnRegisterWindow(this.window_cnt);
         }
 
         #endregion

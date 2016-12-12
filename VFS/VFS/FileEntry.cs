@@ -59,10 +59,10 @@ namespace VFS
             FileEntry node = this;
             while (node != null)
             {
-                result = "\\" + node.fileName + result;
+                result = "/" + node.fileName + result;
                 node = node.parent;
             }
-            return "LJH:" + result;
+            return result;
         }
 
         public void SetName(string name)

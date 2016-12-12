@@ -46,6 +46,11 @@
         <Style TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Margin" Value="2"/>
+            
+        </Style>
+        <Style TargetType="{x:Type ListViewItem}">
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Margin" Value="1"/>
         </Style>
         <ControlTemplate x:Key="ButtonTemplate1" TargetType="{x:Type Button}">
             <Grid>
@@ -77,6 +82,16 @@
                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"></ContentPresenter>
             </Grid>
         </ControlTemplate>
+        <ControlTemplate x:Key="ButtonTemplate4" TargetType="{x:Type Button}">
+            <Grid>
+                <Ellipse Width="50" Height="40">
+                    <Ellipse.Fill>
+                        <ImageBrush ImageSource="images/sharp.png" Stretch="Fill"></ImageBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"></ContentPresenter>
+            </Grid>
+        </ControlTemplate>
         <DataTemplate x:Key="listViewNameColumnTemplate">
             <StackPanel Orientation="Horizontal">
                 <Image Source="{Binding Path=image}" Height="20"></Image>
@@ -88,22 +103,22 @@
     <Grid>
         <Menu HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="167" Background="White">
             <MenuItem Header="_File" Width="40">
-                <MenuItem Command="ApplicationCommands.Open"/>
-                <MenuItem Command="ApplicationCommands.Delete"/>
+                <MenuItem Command="ApplicationCommands.Open" Header="Open"/>
+                <MenuItem Command="ApplicationCommands.Delete" Header="Delete"/>
                 <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
                 <MenuItem Header="New">
                     <MenuItem Header="Text" Click="NewTxtFile_Executed" />
                     <MenuItem Header="Folder" Click="NewFolder_Executed"/>
                 </MenuItem>
-                <MenuItem Command="ApplicationCommands.Properties"/>
+                <MenuItem Command="ApplicationCommands.Properties" Header="Properties"/>
 
             </MenuItem>
             <MenuItem Header="_Edit" Width="40">
-                <MenuItem Command="ApplicationCommands.Cut" />
-                <MenuItem Command="ApplicationCommands.Paste" />
-                <MenuItem Command="ApplicationCommands.Copy" />
-                <MenuItem Command="ApplicationCommands.Undo" />
-                <MenuItem Command="ApplicationCommands.Redo" />
+                <MenuItem Command="ApplicationCommands.Cut" Header="Cut"/>
+                <MenuItem Command="ApplicationCommands.Paste" Header="Paste"/>
+                <MenuItem Command="ApplicationCommands.Copy" Header="Copy"/>
+                <MenuItem Command="ApplicationCommands.Undo" Header="Undo"/>
+                <MenuItem Command="ApplicationCommands.Redo" Header="Redo"/>
             </MenuItem>
             <MenuItem Header="_Help" Width="40">
                 <MenuItem Command="ApplicationCommands.Help" Header="About"/>
@@ -132,7 +147,7 @@
             <TextBox x:Name="tbDir" Grid.Column="3" BorderBrush="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="25,8,10,8"
                      FontSize="14" FontFamily="Microsoft YaHei"/>
             <Button Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Template="{StaticResource ButtonTemplate2}" Click="NewWindow_Click"/>
+                    Template="{StaticResource ButtonTemplate4}" Click="NewWindow_Click"/>
             
         </Grid>
         <Border HorizontalAlignment="Stretch" Margin="5,80,5,40" VerticalAlignment="Stretch" BorderThickness="1" BorderBrush="Black">
@@ -154,41 +169,41 @@
                     </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Path=Nodes}">
-                            <StackPanel Orientation="Horizontal">
-                                <Image VerticalAlignment="Center" Source="images/icon_folder.png"/>
-                                <Label VerticalAlignment="Center" Content="{Binding Name}"></Label>
+                            <StackPanel Orientation="Horizontal" Height="25">
+                                <Image VerticalAlignment="Center" Source="images/folder.png"/>
+                                <Label VerticalAlignment="Center" Content="{Binding Name}" FontSize="12"/>
                             </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                 </TreeView>
-                <ListView Name="listView" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                <ListView Name="listView" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,0,0,0"
                           SelectionMode="Single" SelectionChanged="listView_SelectionChanged" MouseDoubleClick="listView_MouseDoubleClick">
                     <ListView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Command="ApplicationCommands.Open" />
-                            <MenuItem Command="ApplicationCommands.Delete"/>
+                            <MenuItem Command="ApplicationCommands.Open" Header="Open"/>
+                            <MenuItem Command="ApplicationCommands.Delete" Header="Delete"/>
                             <MenuItem Header="Rename" Command="local:MainWindow.RenameCmd"/>
                             <Separator></Separator>
-                            <MenuItem Command="ApplicationCommands.Cut" />
-                            <MenuItem Command="ApplicationCommands.Paste" />
-                            <MenuItem Command="ApplicationCommands.Copy" />
-                            <MenuItem Command="ApplicationCommands.Undo"/>
-                            <MenuItem Command="ApplicationCommands.Redo"/>
+                            <MenuItem Command="ApplicationCommands.Cut" Header="Cut"/>
+                            <MenuItem Command="ApplicationCommands.Paste" Header="Paste"/>
+                            <MenuItem Command="ApplicationCommands.Copy" Header="Copy"/>
+                            <MenuItem Command="ApplicationCommands.Undo" Header="Undo"/>
+                            <MenuItem Command="ApplicationCommands.Redo" Header="Redo"/>
                             <Separator></Separator>
                             <MenuItem Header="New">
                                 <MenuItem Header="Text" Click="NewTxtFile_Executed"/>
                                 <MenuItem Header="Folder" Click="NewFolder_Executed"/>
                             </MenuItem>
-                            <MenuItem Command="ApplicationCommands.Properties"/>
+                            <MenuItem Command="ApplicationCommands.Properties" Header="Properties"/>
                         </ContextMenu>
                     </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridView.Columns>
-                                <GridViewColumn Header="Name" Width="200" CellTemplate="{StaticResource listViewNameColumnTemplate}"/>
+                                <GridViewColumn Header="Name" Width="200" CellTemplate="{StaticResource listViewNameColumnTemplate}" />
                                 <GridViewColumn Header="Modified Time" Width="200" DisplayMemberBinding="{Binding Path=modifiedTime}"/>
-                                <GridViewColumn Header="Type" Width="150" DisplayMemberBinding="{Binding Path=type}"/>
-                                <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Path=size}"/>
+                                <GridViewColumn Header="Type" Width="100" DisplayMemberBinding="{Binding Path=type}"/>
+                                <GridViewColumn Header="Size" Width="100" DisplayMemberBinding="{Binding Path=size}"/>
                             </GridView.Columns>
                         </GridView>
                     </ListView.View>

@@ -4,7 +4,7 @@
         Title="Property" Height="400" Width="330">
     <Window.Resources>
         <Style TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Corbel"></Setter>
+            <Setter Property="FontFamily" Value="Courier"></Setter>
             <Setter Property="FontSize" Value="16"></Setter>
             <Setter Property="HorizontalAlignment" Value="Left"></Setter>
             <Setter Property="VerticalAlignment" Value="Top"></Setter>
@@ -25,7 +25,7 @@
             <TextBlock Margin="10,50.2,0,0" Grid.Row="2"  Text="Modified:" Height="25" Width="100"/>
 
             <Image x:Name="image" HorizontalAlignment="Left" Height="70" Margin="10,10,0,0" VerticalAlignment="Top" Width="70"/>
-            <TextBox x:Name="textbox" HorizontalAlignment="Left" Height="30" Margin="112,33,0,0" VerticalAlignment="Top" Width="190" FontSize="16"/>
+            <TextBox x:Name="textbox" HorizontalAlignment="Left" Height="30" Margin="112,33,0,0" VerticalAlignment="Top" Width="190" FontSize="16" Padding="2"/>
             <TextBlock x:Name="tbFileType" Grid.Row="1" Height="25" Width="180" Margin="134,9.8,0,0"></TextBlock>
             <TextBlock x:Name="tbFileLoc" Grid.Row="1" MinHeight="25" Width="180" Margin="134,39.4,0,0" TextWrapping="Wrap"></TextBlock>
             <TextBlock x:Name="tbFileSize" Grid.Row="1" Height="25" Width="180" Margin="134,92.4,0,0"></TextBlock>
