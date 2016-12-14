@@ -104,6 +104,17 @@ namespace VFS
         }
 
         private MyDiskManager diskManager;
+        public MyDiskManager DiskManager
+        {
+            get
+            {
+                return diskManager;
+            }
+            set
+            {
+                diskManager = value;
+            }
+        }
         private ClipBoard clipBoard;
         private Folder systemRoot;
         public Folder currentDir;
@@ -341,7 +352,6 @@ namespace VFS
         public bool RenameFile(string oldName, string newName)
         {
             FileEntry node = currentDir.FindChild(oldName);
-
             Debug.Assert(node != null);
 
             int cnt = currentDir.FindSameName(newName);
@@ -472,7 +482,9 @@ namespace VFS
                         break;
                     case UndoRedoCmdType.Rename:
                         string oldName = op.source.fileName;
+                        op.source = ((Folder)op.source.parent).FindChild(oldName);
                         op.source.SetName(op.name);
+
                         redoList.Pop();
                         op.name = oldName;
                         undoList.Push(op);

@@ -12,13 +12,16 @@ namespace VFS
     class MyDiskManager
     {
         private static MyDiskManager instance;
-
-
         public static MyDiskManager Instance()
         {
             if (instance == null)
                 instance = new MyDiskManager();
             return instance;
+        }
+
+        public static void SetInstance(MyDiskManager dm)
+        {
+            instance = dm;
         }
 
         //64MB

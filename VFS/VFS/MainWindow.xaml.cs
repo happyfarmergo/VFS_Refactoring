@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.VisualBasic;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
@@ -158,10 +159,17 @@ namespace VFS
 
         private void Rename_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            RenameWindow renameWindow = new RenameWindow(GetSelectedEntry(itemInfo).fileName);
-            renameWindow.Owner = this;
-            renameWindow.Show();
-            itemInfo = null;
+            String old = GetSelectedEntry(itemInfo).fileName;
+            String name = Interaction.InputBox(old, "Rename", old);
+            if (name.Length == 0) return;
+            if (!old.Equals(name) && !mFs.RenameFile(old, name))
+            {
+                MessageBox.Show(this,
+                    "there is already a \"" + name + "\" file in the current dir",
+                    "warning",
+                    MessageBoxButton.OK);
+            }
+            
         }
 
         private void Rename_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -417,6 +425,7 @@ namespace VFS
                 BinaryFormatter binFormat = new BinaryFormatter();
                 mFs = (MyFileSystem)binFormat.Deserialize(fstream);
                 MyFileSystem.SetInstance(mFs);
+                MyDiskManager.SetInstance(mFs.DiskManager);
                 fstream.Close();
             }
             catch (FileNotFoundException e)
